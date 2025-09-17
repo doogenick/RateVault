@@ -16,6 +16,7 @@ import Invoices from "@/pages/invoices";
 import Agents from "@/pages/agents";
 import TourOperations from "@/pages/tour-operations";
 import BookingManagement from "@/pages/booking-management";
+import QuoteSchedule from "@/pages/quote-schedule";
 
 function Router() {
   return (
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/agents" component={Agents} />
       <Route path="/tour-operations" component={TourOperations} />
       <Route path="/booking-management" component={BookingManagement} />
+      <Route path="/quote-schedule" component={QuoteSchedule} />
       <Route component={NotFound} />
     </Switch>
   );
