@@ -1,0 +1,146 @@
+🔑 Project Overview
+
+A browser-based internal app to:
+
+Store and search supplier rates & details.
+
+Track FIT (≤8 pax) and Group (>8 pax) quotes, provisional bookings, and confirmed bookings.
+
+Generate supplier booking emails, client vouchers, and guide itineraries from stored data.
+
+Keep using Excel for detailed cost calculations (upload or link to files).
+
+Since you’re the only user, the app is read/write without authentication.
+Focus is on speed of entry, search, and document generation.
+
+🗂️ Database Schema (Supabase)
+
+Create the following tables with PostgreSQL relations:
+
+suppliers
+Column	Type	Notes
+id	uuid (PK)	default gen_random_uuid()
+name	text	Supplier/property name
+region	text	e.g. “Okavango Delta”, “Cape Town”
+service_type	text	e.g. Accommodation, Activity, Transfer
+contact_name	text	
+contact_email	text	
+phone	text	
+notes	text	free-form
+rate_sheet_url	text	link to PDF stored in Supabase storage
+created_at	timestamptz	default now()
+rates
+Column	Type	Notes
+id	uuid (PK)	
+supplier_id	uuid (FK → suppliers.id)	
+season	text	e.g. “High 2025”, “Low 2026”
+valid_from	date	
+valid_to	date	
+room_type	text	
+board_basis	text	e.g. BB, HB, FB
+price_per_person	numeric	
+currency	text	
+notes	text	
+tours
+Column	Type	Notes
+id	uuid (PK)	
+client_name	text	
+quote_ref	text	Your Excel/Accounting reference
+tour_type	text	ENUM: ‘FIT’ or ‘Group’
+start_date	date	
+end_date	date	
+status	text	ENUM: ‘Quote’, ‘Provisional’, ‘Confirmed’, ‘Cancelled’
+deposit_due	date	
+release_date	date	
+final_payment	date	
+notes	text	
+excel_quote_url	text	link to your Excel costing sheet
+created_at	timestamptz	
+bookings
+Column	Type	Notes
+id	uuid (PK)	
+tour_id	uuid (FK → tours.id)	
+supplier_id	uuid (FK → suppliers.id)	
+service_desc	text	
+check_in	date	
+check_out	date	
+pax	integer	
+confirmation_no	text	
+deposit_status	text	ENUM: ‘Not Required’, ‘Pending’, ‘Paid’
+notes	text	
+guides (optional)
+Column	Type
+id	uuid (PK)
+name	text
+contact	text
+linked_tours	uuid[]
+⚡ Tech Stack
+Layer	Choice	Reason
+Frontend	Next.js + React + Tailwind	Modern UI, static or server-rendered pages, excellent Supabase integration
+Backend	Supabase	PostgreSQL, storage for PDFs, serverless edge functions for email generation
+Document generation	react-pdf or server-side PDFKit / Supabase Edge Functions	Generate vouchers and guide sheets
+Email	Supabase Edge Function + Nodemailer or a transactional email API (Postmark/SendGrid)	Auto-create booking request emails
+🏗️ Scaffolding Prompts
+
+Use these prompts with a code-generation assistant (like npx create-next-app, GitHub Copilot, or ChatGPT-code) to scaffold each layer.
+
+1️⃣ Project Setup
+Create a Next.js 14 project using TypeScript and Tailwind CSS.
+Install @supabase/supabase-js for database operations.
+Set up environment variables for SUPABASE_URL and SUPABASE_ANON_KEY.
+Create a shared Supabase client in lib/supabase.ts.
+
+2️⃣ Database Connection
+Generate a TypeScript type definition for the Supabase schema using supabase gen types.
+Configure a single Supabase client for client-side CRUD operations.
+
+3️⃣ Supplier Module
+Build a /suppliers page:
+- Table/grid view listing suppliers with search by name/region/service_type.
+- Button to add new supplier with form fields matching the suppliers table.
+- Ability to upload a rate sheet (PDF) to Supabase storage and store the URL in rate_sheet_url.
+- When a supplier row is clicked, show a side panel with rate records (join with rates table).
+
+4️⃣ Rate Management
+On the supplier detail page, allow adding multiple rate entries:
+- Season, valid_from, valid_to, room_type, board_basis, price_per_person, currency, notes.
+- Show rates in a sortable table.
+
+5️⃣ Tour & Booking Tracker
+Create a /tours page:
+- Table view with filters by status (Quote, Provisional, Confirmed).
+- Fields: client_name, quote_ref, tour_type, start_date, end_date, status, release_date.
+- Colored badges for approaching deposit_due or release_date (use date diff).
+- Button to create a new tour.
+
+Inside each tour:
+- List all linked bookings (join bookings and suppliers).
+- Add/edit bookings with supplier dropdown, check_in/out, pax, notes.
+- Attach Excel quote file link (upload to Supabase storage).
+
+6️⃣ Email Template Generator
+For each booking, add a "Generate Booking Email" button:
+- Opens a modal showing a pre-filled email template (supplier name, dates, pax, service description).
+- Provide a "Copy to clipboard" and "Send via SMTP" option using a Supabase Edge Function.
+
+7️⃣ Voucher & Guide PDF
+Create a "Generate Voucher" button on the tour detail page:
+- Gather all bookings for that tour.
+- Output a styled PDF listing services, dates, supplier contacts, and your tour reference.
+- Save PDF to Supabase storage and provide a download link.
+
+🚀 Iteration Roadmap
+Stage	Deliverable
+MVP	Supplier & Rate CRUD, Tour & Booking CRUD, PDF/Excel link uploads.
+Phase 2	Email template generation + automated release reminders (cron or Edge Functions).
+Phase 3	Printable guide sheets + offline mode with local storage.
+Phase 4	Optional multi-user auth if you later expand team.
+🟢 Tips
+
+Use Supabase Storage Buckets for Excel quote files and rate sheets.
+
+Create PostgreSQL views for quick queries like “Provisional bookings expiring in next 7 days.”
+
+For reminders, use a Supabase Scheduled Function (cron) to email yourself daily.
+
+Tailwind UI components (tables, modals, badges) will speed up development.
