@@ -1,0 +1,19 @@
+# Ignore client directory for separate build
+client/
+
+# Ignore development files
+node_modules/
+.env.local
+.env.development
+
+# Ignore build artifacts
+dist/
+*.log
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
