@@ -6,6 +6,15 @@ import {
   tours, 
   bookings, 
   guides,
+  agents,
+  quotes,
+  quoteItems,
+  overnightLists,
+  bookingChecklists,
+  invoices,
+  invoiceItems,
+  tourCrew,
+  tourEquipment,
   type Supplier, 
   type InsertSupplier,
   type Rate,
@@ -18,7 +27,30 @@ import {
   type InsertGuide,
   type SupplierWithRates,
   type TourWithBookings,
-  type BookingWithSupplier
+  type BookingWithSupplier,
+  type Agent,
+  type InsertAgent,
+  type Quote,
+  type InsertQuote,
+  type QuoteItem,
+  type InsertQuoteItem,
+  type OvernightList,
+  type InsertOvernightList,
+  type BookingChecklist,
+  type InsertBookingChecklist,
+  type Invoice,
+  type InsertInvoice,
+  type InvoiceItem,
+  type InsertInvoiceItem,
+  type TourCrew,
+  type InsertTourCrew,
+  type TourEquipment,
+  type InsertTourEquipment,
+  type QuoteWithItems,
+  type TourWithOperations,
+  type OvernightListWithTour,
+  type BookingChecklistWithTour,
+  type InvoiceWithItems
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
@@ -56,6 +88,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Rates
+  async getAllRates(): Promise<Rate[]> {
+    return await db.select().from(rates);
+  }
+
   async getRatesBySupplier(supplierId: string): Promise<Rate[]> {
     return await db.select().from(rates).where(eq(rates.supplierId, supplierId));
   }
@@ -186,5 +222,246 @@ export class DatabaseStorage implements IStorage {
   async createGuide(insertGuide: InsertGuide): Promise<Guide> {
     const result = await db.insert(guides).values(insertGuide).returning();
     return result[0];
+  }
+
+  // Agents
+  async getAgents(): Promise<Agent[]> {
+    return await db.select().from(agents);
+  }
+
+  async getAgent(id: string): Promise<Agent | undefined> {
+    const result = await db.select().from(agents).where(eq(agents.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async createAgent(insertAgent: InsertAgent): Promise<Agent> {
+    const result = await db.insert(agents).values(insertAgent).returning();
+    return result[0];
+  }
+
+  async updateAgent(id: string, updates: Partial<InsertAgent>): Promise<Agent | undefined> {
+    const result = await db.update(agents)
+      .set(updates)
+      .where(eq(agents.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteAgent(id: string): Promise<boolean> {
+    const result = await db.delete(agents).where(eq(agents.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Quotes
+  async getQuotes(): Promise<Quote[]> {
+    return await db.select().from(quotes);
+  }
+
+  async getQuote(id: string): Promise<QuoteWithItems | undefined> {
+    const quote = await db.select().from(quotes).where(eq(quotes.id, id)).limit(1);
+    if (quote.length === 0) return undefined;
+
+    const items = await db.select().from(quoteItems).where(eq(quoteItems.quoteId, id));
+    return { ...quote[0], items };
+  }
+
+  async createQuote(insertQuote: InsertQuote): Promise<Quote> {
+    const result = await db.insert(quotes).values(insertQuote).returning();
+    return result[0];
+  }
+
+  async updateQuote(id: string, updates: Partial<InsertQuote>): Promise<Quote | undefined> {
+    const result = await db.update(quotes)
+      .set(updates)
+      .where(eq(quotes.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteQuote(id: string): Promise<boolean> {
+    const result = await db.delete(quotes).where(eq(quotes.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Quote Items
+  async getQuoteItems(quoteId: string): Promise<QuoteItem[]> {
+    return await db.select().from(quoteItems).where(eq(quoteItems.quoteId, quoteId));
+  }
+
+  async createQuoteItem(insertItem: InsertQuoteItem): Promise<QuoteItem> {
+    const result = await db.insert(quoteItems).values(insertItem).returning();
+    return result[0];
+  }
+
+  async updateQuoteItem(id: string, updates: Partial<InsertQuoteItem>): Promise<QuoteItem | undefined> {
+    const result = await db.update(quoteItems)
+      .set(updates)
+      .where(eq(quoteItems.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteQuoteItem(id: string): Promise<boolean> {
+    const result = await db.delete(quoteItems).where(eq(quoteItems.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Overnight Lists
+  async getOvernightLists(tourId: string): Promise<OvernightList[]> {
+    return await db.select().from(overnightLists)
+      .where(eq(overnightLists.tourId, tourId))
+      .orderBy(overnightLists.dayNumber);
+  }
+
+  async createOvernightList(insertList: InsertOvernightList): Promise<OvernightList> {
+    const result = await db.insert(overnightLists).values(insertList).returning();
+    return result[0];
+  }
+
+  async updateOvernightList(id: string, updates: Partial<InsertOvernightList>): Promise<OvernightList | undefined> {
+    const result = await db.update(overnightLists)
+      .set(updates)
+      .where(eq(overnightLists.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteOvernightList(id: string): Promise<boolean> {
+    const result = await db.delete(overnightLists).where(eq(overnightLists.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Booking Checklists
+  async getBookingChecklists(tourId: string): Promise<BookingChecklist[]> {
+    return await db.select().from(bookingChecklists)
+      .where(eq(bookingChecklists.tourId, tourId))
+      .orderBy(bookingChecklists.priority, bookingChecklists.dueDate);
+  }
+
+  async createBookingChecklist(insertChecklist: InsertBookingChecklist): Promise<BookingChecklist> {
+    const result = await db.insert(bookingChecklists).values(insertChecklist).returning();
+    return result[0];
+  }
+
+  async updateBookingChecklist(id: string, updates: Partial<InsertBookingChecklist>): Promise<BookingChecklist | undefined> {
+    const result = await db.update(bookingChecklists)
+      .set(updates)
+      .where(eq(bookingChecklists.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteBookingChecklist(id: string): Promise<boolean> {
+    const result = await db.delete(bookingChecklists).where(eq(bookingChecklists.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Invoices
+  async getInvoices(): Promise<Invoice[]> {
+    return await db.select().from(invoices);
+  }
+
+  async getInvoice(id: string): Promise<InvoiceWithItems | undefined> {
+    const invoice = await db.select().from(invoices).where(eq(invoices.id, id)).limit(1);
+    if (invoice.length === 0) return undefined;
+
+    const items = await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, id));
+    return { ...invoice[0], items };
+  }
+
+  async createInvoice(insertInvoice: InsertInvoice): Promise<Invoice> {
+    const result = await db.insert(invoices).values(insertInvoice).returning();
+    return result[0];
+  }
+
+  async updateInvoice(id: string, updates: Partial<InsertInvoice>): Promise<Invoice | undefined> {
+    const result = await db.update(invoices)
+      .set(updates)
+      .where(eq(invoices.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteInvoice(id: string): Promise<boolean> {
+    const result = await db.delete(invoices).where(eq(invoices.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Invoice Items
+  async getInvoiceItems(invoiceId: string): Promise<InvoiceItem[]> {
+    return await db.select().from(invoiceItems).where(eq(invoiceItems.invoiceId, invoiceId));
+  }
+
+  async createInvoiceItem(insertItem: InsertInvoiceItem): Promise<InvoiceItem> {
+    const result = await db.insert(invoiceItems).values(insertItem).returning();
+    return result[0];
+  }
+
+  async updateInvoiceItem(id: string, updates: Partial<InsertInvoiceItem>): Promise<InvoiceItem | undefined> {
+    const result = await db.update(invoiceItems)
+      .set(updates)
+      .where(eq(invoiceItems.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteInvoiceItem(id: string): Promise<boolean> {
+    const result = await db.delete(invoiceItems).where(eq(invoiceItems.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Tour Crew
+  async getTourCrew(tourId: string): Promise<TourCrew[]> {
+    return await db.select().from(tourCrew).where(eq(tourCrew.tourId, tourId));
+  }
+
+  async createTourCrew(insertCrew: InsertTourCrew): Promise<TourCrew> {
+    const result = await db.insert(tourCrew).values(insertCrew).returning();
+    return result[0];
+  }
+
+  async updateTourCrew(id: string, updates: Partial<InsertTourCrew>): Promise<TourCrew | undefined> {
+    const result = await db.update(tourCrew)
+      .set(updates)
+      .where(eq(tourCrew.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteTourCrew(id: string): Promise<boolean> {
+    const result = await db.delete(tourCrew).where(eq(tourCrew.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Tour Equipment
+  async getTourEquipment(tourId: string): Promise<TourEquipment[]> {
+    return await db.select().from(tourEquipment).where(eq(tourEquipment.tourId, tourId));
+  }
+
+  async createTourEquipment(insertEquipment: InsertTourEquipment): Promise<TourEquipment> {
+    const result = await db.insert(tourEquipment).values(insertEquipment).returning();
+    return result[0];
+  }
+
+  async updateTourEquipment(id: string, updates: Partial<InsertTourEquipment>): Promise<TourEquipment | undefined> {
+    const result = await db.update(tourEquipment)
+      .set(updates)
+      .where(eq(tourEquipment.id, id))
+      .returning();
+    
+    return result.length > 0 ? result[0] : undefined;
+  }
+
+  async deleteTourEquipment(id: string): Promise<boolean> {
+    const result = await db.delete(tourEquipment).where(eq(tourEquipment.id, id)).returning();
+    return result.length > 0;
   }
 }

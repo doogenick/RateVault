@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Tour } from "@shared/schema";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatusBadge from "@/components/ui/status-badge";
-import { Route, Search, Plus, Edit, Trash2, Users, User } from "lucide-react";
+import { Route, Search, Plus, Edit, Trash2, Users, User, Eye } from "lucide-react";
 import TourForm from "./tour-form";
 
 interface TourTableProps {
@@ -19,6 +20,7 @@ export default function TourTable({ tours }: TourTableProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -53,6 +55,10 @@ export default function TourTable({ tours }: TourTableProps) {
     if (confirm(`Are you sure you want to delete the tour for ${clientName}?`)) {
       deleteTourMutation.mutate(id);
     }
+  };
+
+  const handleViewDetails = (tourId: string) => {
+    setLocation(`/tours/${tourId}`);
   };
 
   const getTourTypeIcon = (tourType: string) => {
@@ -182,6 +188,14 @@ export default function TourTable({ tours }: TourTableProps) {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(tour.id)}
+                          data-testid={`button-view-${tour.id}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"

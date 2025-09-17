@@ -9,6 +9,9 @@ if (!process.env.DATABASE_URL) {
 // Create postgres client
 const client = postgres(process.env.DATABASE_URL, {
   ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  max: 1, // Limit connections for serverless
+  idle_timeout: 20,
+  connect_timeout: 10,
 });
 
 // Create drizzle instance

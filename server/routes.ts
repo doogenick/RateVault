@@ -6,7 +6,16 @@ import {
   insertRateSchema,
   insertTourSchema,
   insertBookingSchema,
-  insertGuideSchema
+  insertGuideSchema,
+  insertAgentSchema,
+  insertQuoteSchema,
+  insertQuoteItemSchema,
+  insertOvernightListSchema,
+  insertBookingChecklistSchema,
+  insertInvoiceSchema,
+  insertInvoiceItemSchema,
+  insertTourCrewSchema,
+  insertTourEquipmentSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -68,6 +77,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Rates routes
+  app.get("/api/rates", async (req, res) => {
+    try {
+      const rates = await storage.getAllRates();
+      res.json(rates);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch rates" });
+    }
+  });
+
   app.get("/api/suppliers/:supplierId/rates", async (req, res) => {
     try {
       const rates = await storage.getRatesBySupplier(req.params.supplierId);
@@ -84,6 +102,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(rate);
     } catch (error) {
       res.status(400).json({ message: "Invalid rate data" });
+    }
+  });
+
+  app.patch("/api/rates/:id", async (req, res) => {
+    try {
+      const validatedData = insertRateSchema.partial().parse(req.body);
+      const rate = await storage.updateRate(req.params.id, validatedData);
+      if (!rate) {
+        return res.status(404).json({ message: "Rate not found" });
+      }
+      res.json(rate);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid rate data" });
+    }
+  });
+
+  app.delete("/api/rates/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteRate(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Rate not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete rate" });
     }
   });
 
@@ -215,6 +258,285 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(guide);
     } catch (error) {
       res.status(400).json({ message: "Invalid guide data" });
+    }
+  });
+
+  // Agents routes
+  app.get("/api/agents", async (req, res) => {
+    try {
+      const agents = await storage.getAgents();
+      res.json(agents);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch agents" });
+    }
+  });
+
+  app.get("/api/agents/:id", async (req, res) => {
+    try {
+      const agent = await storage.getAgent(req.params.id);
+      if (!agent) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+      res.json(agent);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch agent" });
+    }
+  });
+
+  app.post("/api/agents", async (req, res) => {
+    try {
+      const validatedData = insertAgentSchema.parse(req.body);
+      const agent = await storage.createAgent(validatedData);
+      res.status(201).json(agent);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid agent data" });
+    }
+  });
+
+  app.patch("/api/agents/:id", async (req, res) => {
+    try {
+      const validatedData = insertAgentSchema.partial().parse(req.body);
+      const agent = await storage.updateAgent(req.params.id, validatedData);
+      if (!agent) {
+        return res.status(404).json({ message: "Agent not found" });
+      }
+      res.json(agent);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid agent data" });
+    }
+  });
+
+  // Quotes routes
+  app.get("/api/quotes", async (req, res) => {
+    try {
+      const quotes = await storage.getQuotes();
+      res.json(quotes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch quotes" });
+    }
+  });
+
+  app.get("/api/quotes/:id", async (req, res) => {
+    try {
+      const quote = await storage.getQuote(req.params.id);
+      if (!quote) {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+      res.json(quote);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch quote" });
+    }
+  });
+
+  app.post("/api/quotes", async (req, res) => {
+    try {
+      const validatedData = insertQuoteSchema.parse(req.body);
+      const quote = await storage.createQuote(validatedData);
+      res.status(201).json(quote);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid quote data" });
+    }
+  });
+
+  app.patch("/api/quotes/:id", async (req, res) => {
+    try {
+      const validatedData = insertQuoteSchema.partial().parse(req.body);
+      const quote = await storage.updateQuote(req.params.id, validatedData);
+      if (!quote) {
+        return res.status(404).json({ message: "Quote not found" });
+      }
+      res.json(quote);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid quote data" });
+    }
+  });
+
+  // Quote Items routes
+  app.get("/api/quotes/:quoteId/items", async (req, res) => {
+    try {
+      const items = await storage.getQuoteItems(req.params.quoteId);
+      res.json(items);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch quote items" });
+    }
+  });
+
+  app.post("/api/quotes/:quoteId/items", async (req, res) => {
+    try {
+      const validatedData = insertQuoteItemSchema.parse({
+        ...req.body,
+        quoteId: req.params.quoteId
+      });
+      const item = await storage.createQuoteItem(validatedData);
+      res.status(201).json(item);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid quote item data" });
+    }
+  });
+
+  app.patch("/api/quote-items/:id", async (req, res) => {
+    try {
+      const validatedData = insertQuoteItemSchema.partial().parse(req.body);
+      const item = await storage.updateQuoteItem(req.params.id, validatedData);
+      if (!item) {
+        return res.status(404).json({ message: "Quote item not found" });
+      }
+      res.json(item);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid quote item data" });
+    }
+  });
+
+  app.delete("/api/quote-items/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteQuoteItem(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Quote item not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete quote item" });
+    }
+  });
+
+  // Overnight Lists routes
+  app.get("/api/tours/:tourId/overnight-lists", async (req, res) => {
+    try {
+      const lists = await storage.getOvernightLists(req.params.tourId);
+      res.json(lists);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch overnight lists" });
+    }
+  });
+
+  app.post("/api/tours/:tourId/overnight-lists", async (req, res) => {
+    try {
+      const validatedData = insertOvernightListSchema.parse({
+        ...req.body,
+        tourId: req.params.tourId
+      });
+      const list = await storage.createOvernightList(validatedData);
+      res.status(201).json(list);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid overnight list data" });
+    }
+  });
+
+  app.patch("/api/overnight-lists/:id", async (req, res) => {
+    try {
+      const validatedData = insertOvernightListSchema.partial().parse(req.body);
+      const list = await storage.updateOvernightList(req.params.id, validatedData);
+      if (!list) {
+        return res.status(404).json({ message: "Overnight list not found" });
+      }
+      res.json(list);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid overnight list data" });
+    }
+  });
+
+  app.delete("/api/overnight-lists/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteOvernightList(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Overnight list not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete overnight list" });
+    }
+  });
+
+  // Booking Checklists routes
+  app.get("/api/tours/:tourId/checklists", async (req, res) => {
+    try {
+      const checklists = await storage.getBookingChecklists(req.params.tourId);
+      res.json(checklists);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch booking checklists" });
+    }
+  });
+
+  app.post("/api/tours/:tourId/checklists", async (req, res) => {
+    try {
+      const validatedData = insertBookingChecklistSchema.parse({
+        ...req.body,
+        tourId: req.params.tourId
+      });
+      const checklist = await storage.createBookingChecklist(validatedData);
+      res.status(201).json(checklist);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid booking checklist data" });
+    }
+  });
+
+  app.patch("/api/booking-checklists/:id", async (req, res) => {
+    try {
+      const validatedData = insertBookingChecklistSchema.partial().parse(req.body);
+      const checklist = await storage.updateBookingChecklist(req.params.id, validatedData);
+      if (!checklist) {
+        return res.status(404).json({ message: "Booking checklist not found" });
+      }
+      res.json(checklist);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid booking checklist data" });
+    }
+  });
+
+  app.delete("/api/booking-checklists/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteBookingChecklist(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Booking checklist not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete booking checklist" });
+    }
+  });
+
+  // Invoices routes
+  app.get("/api/invoices", async (req, res) => {
+    try {
+      const invoices = await storage.getInvoices();
+      res.json(invoices);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch invoices" });
+    }
+  });
+
+  app.get("/api/invoices/:id", async (req, res) => {
+    try {
+      const invoice = await storage.getInvoice(req.params.id);
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      res.json(invoice);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch invoice" });
+    }
+  });
+
+  app.post("/api/invoices", async (req, res) => {
+    try {
+      const validatedData = insertInvoiceSchema.parse(req.body);
+      const invoice = await storage.createInvoice(validatedData);
+      res.status(201).json(invoice);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid invoice data" });
+    }
+  });
+
+  app.patch("/api/invoices/:id", async (req, res) => {
+    try {
+      const validatedData = insertInvoiceSchema.partial().parse(req.body);
+      const invoice = await storage.updateInvoice(req.params.id, validatedData);
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+      res.json(invoice);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid invoice data" });
     }
   });
 

@@ -14,11 +14,12 @@ import { Textarea } from "@/components/ui/textarea";
 interface BookingFormProps {
   open: boolean;
   onClose: () => void;
+  defaultTourId?: string;
 }
 
 const depositStatuses = ["Not Required", "Pending", "Paid"];
 
-export default function BookingForm({ open, onClose }: BookingFormProps) {
+export default function BookingForm({ open, onClose, defaultTourId }: BookingFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -33,7 +34,7 @@ export default function BookingForm({ open, onClose }: BookingFormProps) {
   const form = useForm<InsertBooking>({
     resolver: zodResolver(insertBookingSchema),
     defaultValues: {
-      tourId: "",
+      tourId: defaultTourId || "",
       supplierId: "",
       serviceDesc: "",
       pax: 1,

@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { Supplier } from "@shared/schema";
+import type { Supplier, Rate } from "@shared/schema";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Building, Search, Plus, Edit, Trash2, DollarSign } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Building, Search, Plus, Edit, Trash2, DollarSign, Eye } from "lucide-react";
 import SupplierForm from "./supplier-form";
+import RateManagement from "./rate-management";
 
 interface SupplierTableProps {
   suppliers: Supplier[];
@@ -17,11 +19,18 @@ interface SupplierTableProps {
 
 export default function SupplierTable({ suppliers }: SupplierTableProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [regionFilter, setRegionFilter] = useState("all");
   const [serviceFilter, setServiceFilter] = useState("all");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Get rates count for each supplier
+  const { data: allRates = [] } = useQuery<Rate[]>({
+    queryKey: ["/api/rates"],
+  });
 
   const deleteSupplierMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -66,6 +75,15 @@ export default function SupplierTable({ suppliers }: SupplierTableProps) {
     if (confirm(`Are you sure you want to delete ${name}?`)) {
       deleteSupplierMutation.mutate(id);
     }
+  };
+
+  const handleViewDetails = (supplier: Supplier) => {
+    setSelectedSupplier(supplier);
+    setIsDetailOpen(true);
+  };
+
+  const getRatesCount = (supplierId: string) => {
+    return allRates.filter(rate => rate.supplierId === supplierId).length;
   };
 
   return (
@@ -175,11 +193,21 @@ export default function SupplierTable({ suppliers }: SupplierTableProps) {
                   <TableCell className="text-sm text-foreground">
                     <div className="flex items-center">
                       <DollarSign className="mr-1 text-green-600 w-4 h-4" />
-                      Rate entries
+                      <span className="text-muted-foreground">
+                        {getRatesCount(supplier.id)} rate{getRatesCount(supplier.id) !== 1 ? 's' : ''}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDetails(supplier)}
+                        data-testid={`button-view-${supplier.id}`}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -205,6 +233,69 @@ export default function SupplierTable({ suppliers }: SupplierTableProps) {
       )}
 
       <SupplierForm open={isFormOpen} onClose={() => setIsFormOpen(false)} />
+
+      {/* Supplier Detail Dialog */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Supplier Details</DialogTitle>
+          </DialogHeader>
+          
+          {selectedSupplier && (
+            <div className="space-y-6">
+              {/* Supplier Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-lg">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{selectedSupplier.name}</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center">
+                      <span className="font-medium text-muted-foreground w-20">Region:</span>
+                      <span>{selectedSupplier.region}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="font-medium text-muted-foreground w-20">Type:</span>
+                      <Badge className={`px-2 py-1 text-xs font-medium rounded-md ${getServiceTypeColor(selectedSupplier.serviceType)}`}>
+                        {selectedSupplier.serviceType}
+                      </Badge>
+                    </div>
+                    {selectedSupplier.contactName && (
+                      <div className="flex items-center">
+                        <span className="font-medium text-muted-foreground w-20">Contact:</span>
+                        <span>{selectedSupplier.contactName}</span>
+                      </div>
+                    )}
+                    {selectedSupplier.contactEmail && (
+                      <div className="flex items-center">
+                        <span className="font-medium text-muted-foreground w-20">Email:</span>
+                        <span>{selectedSupplier.contactEmail}</span>
+                      </div>
+                    )}
+                    {selectedSupplier.phone && (
+                      <div className="flex items-center">
+                        <span className="font-medium text-muted-foreground w-20">Phone:</span>
+                        <span>{selectedSupplier.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {selectedSupplier.notes && (
+                  <div>
+                    <h4 className="font-medium text-foreground mb-2">Notes</h4>
+                    <p className="text-sm text-muted-foreground">{selectedSupplier.notes}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Rate Management */}
+              <RateManagement 
+                supplierId={selectedSupplier.id} 
+                supplierName={selectedSupplier.name} 
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
