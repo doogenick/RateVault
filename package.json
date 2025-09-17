@@ -13,7 +13,7 @@
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:setup": "node scripts/setup-db.js",
-    "vercel-build": "npm run build:client && npm run build:server"
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
