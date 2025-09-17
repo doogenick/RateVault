@@ -74,6 +74,12 @@ export const guides = pgTable("guides", {
 export const insertSupplierSchema = createInsertSchema(suppliers).omit({
   id: true,
   createdAt: true,
+}).extend({
+  contactName: z.string().optional(),
+  contactEmail: z.string().optional(),
+  phone: z.string().optional(),
+  notes: z.string().optional(),
+  rateSheetUrl: z.string().optional(),
 });
 
 export const insertRateSchema = createInsertSchema(rates).omit({
@@ -83,10 +89,21 @@ export const insertRateSchema = createInsertSchema(rates).omit({
 export const insertTourSchema = createInsertSchema(tours).omit({
   id: true,
   createdAt: true,
+}).extend({
+  depositDue: z.string().optional(),
+  releaseDate: z.string().optional(),
+  finalPayment: z.string().optional(),
+  notes: z.string().optional(),
+  excelQuoteUrl: z.string().optional(),
 });
 
 export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
+}).extend({
+  checkIn: z.string().optional(),
+  checkOut: z.string().optional(),
+  confirmationNo: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 export const insertGuideSchema = createInsertSchema(guides).omit({
